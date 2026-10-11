@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 
 from . import catalog, sizes, tiers
 from .fetch import FetchError, Fetcher
@@ -78,9 +79,14 @@ def _excluded(it: dict, profile: dict) -> str | None:
     return None
 
 
-def rank(items: list[dict], profile: dict, cap_table: dict | None = None) -> list[dict]:
-    """Score = discount + liked brands + fit + colours. Exclusions remove; nothing is guessed."""
+def rank(items: list[dict], profile: dict, cap_table: dict | None = None, sale_only: bool = True,
+         month: int | None = None) -> list[dict]:
+    """Score = discount + liked brands + fit + colours, minus out-of-season. Exclusions remove; nothing is guessed.
+    sale_only (default): only reduced items, since a shop's full catalogue isn't a deal. Accessories only when the
+    profile asks for them (`accessories: true`), so a tote bag never takes a pick from a jacket."""
     cap_table = cap_table or tiers.caps(None, profile)
+    month = month or date.today().month
+    want_acc = bool(profile.get("accessories"))
     likes = (profile.get("brands") or {}).get("love") or []
     fit_likes = (profile.get("fit") or {}).get("likes") or []
     palette = (profile.get("colours") or {}).get("palette") or []
@@ -88,6 +94,10 @@ def rank(items: list[dict], profile: dict, cap_table: dict | None = None) -> lis
     out = []
     for it in items:
         if _excluded(it, profile):
+            continue
+        if sale_only and not it.get("discount"):
+            continue
+        if it.get("category") == "accessory" and not want_acc:
             continue
         tier = tiers.tier_for(it.get("garment", "other"), it.get("price"), cap_table)
         if tier and tier not in want_tiers:
@@ -109,6 +119,9 @@ def rank(items: list[dict], profile: dict, cap_table: dict | None = None) -> lis
         if cols:
             score += 10
             why.append(f"in {cols[0]}")
-        out.append({**it, "tier": tier, "score": round(score, 2), "why": why})
+        off = catalog.out_of_season(it.get("title", ""), month)
+        if off:
+            score -= 25
+        out.append({**it, "tier": tier, "score": round(score, 2), "why": why, **({"off_season": True} if off else {})})
     out.sort(key=lambda x: (-x["score"], x.get("price") or 0))
     return out

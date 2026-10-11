@@ -112,3 +112,12 @@ def test_dry_run_records_nothing(home, capsys):
     assert cli.main(["digest", "--dry-run", "--no-watch", "--mark-shown", "--discord"]) == 0
     assert "Top picks" in capsys.readouterr().out
     assert not (home / "data" / "shown.json").exists()
+
+
+def test_example_files_parse_and_validate():
+    prof = yaml.safe_load((EXAMPLES / "profile.example.yaml").read_text())
+    assert onboard.validate({**prof, "department": "mens"}) == []
+    cfg = yaml.safe_load((EXAMPLES / "config.example.yaml").read_text())
+    assert len(cfg["sources"]) == 7 and "CHANGE-ME" in cfg["user_agent"]
+    for f in ("answers.example.json", "answers-womens.example.json"):
+        assert onboard.build(json.loads((EXAMPLES / f).read_text()))[1] == []

@@ -62,3 +62,21 @@ def test_looks_one_per_tier():
     mid = lks["mid"]["pieces"]                                        # no mid shoes: the owned trainers fill in
     assert mid[-1].get("owned") and lks["mid"]["total"] == 137
     assert lks["high"]["pieces"] == [] and "no full High look" in lks["high"]["note"]
+
+
+def test_sale_only_accessories_and_season():
+    from clothinglab import engine
+    prof = {"sizes": {}, "budget": {"tiers": ["low", "mid", "high"]}}
+    items = [
+        {"id": "a", "title": "Coach Jacket", "category": "outer", "garment": "jacket", "price": 30, "discount": 0.5},
+        {"id": "b", "title": "Trackpants", "category": "bottom", "garment": "track", "price": 100, "discount": 0.0},
+        {"id": "c", "title": "Tote Bag", "category": "accessory", "garment": "other", "price": 14, "discount": 0.6},
+        {"id": "d", "title": "Ripstop Shorts", "category": "bottom", "garment": "trousers", "price": 20, "discount": 0.6},
+    ]
+    r = engine.rank(items, prof, month=11)
+    assert [x["id"] for x in r] == ["a", "d"]                       # no full price, no accessory, shorts last
+    assert r[1]["off_season"] and not r[0].get("off_season")
+    assert {x["id"] for x in engine.rank(items, {**prof, "accessories": True}, sale_only=False, month=7)} == {"a", "b", "c", "d"}
+    lk = looks.build([{**x, "tier": "low"} for x in r] + [{"id": "s", "title": "Court Trainer", "category": "footwear",
+                                                           "tier": "low", "price": 50}], {"department": "mens"})
+    assert lk[0]["pieces"] == []                                     # the only bottom is shorts in November

@@ -8,6 +8,7 @@ Rules, kept simple so you can predict them:
   - everything is in stock in your size, or something you listed under `wardrobe`;
   - every look has at least one new piece, and owned pieces fill at most two slots;
   - at most one loud colour family per look; neutrals (black, white, grey, stone) go with anything;
+  - nothing out of season (no shorts in November);
   - a tier with no full look today is skipped and says so, rather than padded.
 """
 from __future__ import annotations
@@ -59,7 +60,7 @@ def build(ranked: list[dict], profile: dict) -> list[dict]:
     owned = _owned(profile)
     looks = []
     for tier in tiers.enabled(profile):
-        pool = [it for it in ranked if it.get("tier") == tier]
+        pool = [it for it in ranked if it.get("tier") == tier and not it.get("off_season")]
         pieces = next((p for p in (_fill(pool, owned, shape) for shape in shapes) if p), None)
         if not pieces:
             looks.append({"tier": tier, "pieces": [], "total": 0,

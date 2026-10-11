@@ -28,6 +28,7 @@ Sale clothes that are actually in stock in your size, menswear or womenswear, fr
 - **Budget tiers 💸 Low / 👌 Mid / 💎 High** by plain £ lines per garment (a tee under £25 is Low), which you can move.
 - **Never repeats itself.** Anything you've been shown stays out for 14 days, unless it got 5% cheaper again or came back into your size. Colourways count as the same product.
 - **Builds one look per tier**, a dress and shoes or a top, bottom and shoes, plus a coat if one goes, using pieces you already own when it helps. It says so when a tier has no full look today.
+- **Sale items only, by default**, because a shop's whole catalogue isn't a deal. Accessories are opt-in, and shorts or flip-flops sink to the bottom between October and March (parkas in summer) and never make a look.
 - **Watches products** for a price drop or a target price.
 - **Asks before it assumes.** A short onboarding interview writes your profile. It never asks for height or weight.
 
@@ -114,6 +115,7 @@ Two files in `$CLOTHINGLAB_HOME` (default `~/.clothinglab`), both written owner-
 | `sources[]` | 7 example UK Shopify shops (4 men's/unisex, 3 women's) | `name`, `adapter` (`shopify`, `jsonld` or `module:function`), `url`, optional `collection`, `department`, `currency`, `shoe_scale`, `max_pages` |
 | `tiers.caps` | built-in table | £ lines per garment: `{tee: {low: 25, high: 80}}` |
 | `digest.picks` | `6` | Picks per digest |
+| `digest.sale_only` | `true` | Only reduced items; `false` lets full-price items in |
 
 Extra shops can go in `sources.local.yaml` next to `config.yaml` (a list in the same format); a local source with the same name replaces the one in `config.yaml`.
 
@@ -132,6 +134,7 @@ Extra shops can go in `sources.local.yaml` next to `config.yaml` (a list in the 
 | `brands.love` / `never` | Brands that score up / never appear |
 | `budget.tiers` / `caps` | Which tiers you want, and your own £ lines |
 | `wardrobe` | Pieces you own that looks can use |
+| `accessories` | `true` lets bags, hats and belts be picks (default off) |
 
 **Environment**: `CLOTHINGLAB_HOME`, `CLOTHINGLAB_DISCORD_WEBHOOK`, `CLOTHINGLAB_SMTP_HOST`, `_PORT`, `_USER`, `_PASSWORD`, `_FROM`.
 
@@ -169,7 +172,7 @@ Adding a shop that isn't Shopify and has no usable JSON-LD: write `fetch(fetcher
 
 ## Status, limits and real results
 
-Early, version 0.1.0. Measured on 11 Oct 2026 against the fake shop (25 adult products, 13 men's and 12 women's): 12 in stock in Sam's sizes and 11 in Alex's, 10 each after their own exclusions, 6 picks each, and a second digest for Sam that repeated none of the first. The unit tests (106) and the setup check, which runs both people, run on GitHub Actions.
+Early, version 0.1.0. Measured on 11 Oct 2026 against the fake shop (25 adult products, 13 men's and 12 women's): 12 in stock in Sam's sizes and 11 in Alex's, 10 and 9 after their own exclusions (Alex's tote bag drops out because accessories are off by default), 6 picks each, and a second digest for Sam that repeated none of the first. The unit tests (108) and the setup check, which runs both people, run on GitHub Actions.
 
 Limits you should know about:
 

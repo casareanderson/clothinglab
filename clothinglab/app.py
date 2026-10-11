@@ -29,7 +29,8 @@ def refresh(fetcher=None, log=print) -> dict:
 def ranked(include_shown: bool = True) -> list[dict]:
     prof, cfg = _need()
     items = store.pool()
-    out = engine.rank(engine.in_size(items, prof), prof, tiers.caps(cfg, prof))
+    sale_only = (cfg.get("digest") or {}).get("sale_only", True)
+    out = engine.rank(engine.in_size(items, prof), prof, tiers.caps(cfg, prof), sale_only=sale_only)
     return out if include_shown else Ledger().filter(out)
 
 

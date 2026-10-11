@@ -106,6 +106,20 @@ def garment(title: str, product_type: str = "") -> str:
     return "other"
 
 
+SUMMER = re.compile(r"\b(shorts|swim(?:wear|suit| shorts)?|bikini|flip[- ]?flops?|sandals?|slides|sliders|espadrilles?|"
+                    r"linen shorts|vests?|tank(?: top)?s?|sun ?hats?)\b", re.I)
+WINTER = re.compile(r"\b(puffers?|parkas?|down jacket|thermal|fleece-lined|sherpa|snow ?boots?)\b", re.I)
+
+
+def out_of_season(title: str, month: int) -> bool:
+    """Shorts and flip-flops in a UK November, or a parka in July. Northern hemisphere; a nudge, not a rule."""
+    if month in (10, 11, 12, 1, 2, 3):
+        return bool(SUMMER.search(title or ""))
+    if month in (6, 7, 8):
+        return bool(WINTER.search(title or ""))
+    return False
+
+
 def colour_families(text: str) -> list[str]:
     return [fam for fam, rx in _COLOUR_RES if rx.search(text or "")]
 

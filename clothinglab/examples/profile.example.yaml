@@ -20,5 +20,6 @@ brands:
 budget:
   tiers: [low, mid, high]
   caps: {}                # e.g. {tee: {low: 20}}
+accessories: false        # true = bags, hats, belts can be picks too
 wardrobe:                 # optional: pieces you own that looks can use
   - {name: white leather trainers, category: footwear, colour: white}
