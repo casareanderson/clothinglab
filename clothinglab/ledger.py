@@ -19,8 +19,16 @@ _COLOUR_WORDS = sorted({w for ws in catalog.COLOUR_FAMILIES.values() for w in ws
 _COLOUR_TAIL = re.compile(r"[\s\-/|,]+(?:" + "|".join(map(re.escape, _COLOUR_WORDS)) + r")(?:[\s\-/]+\w+)?\s*$", re.I)
 
 
+_SEGMENT = re.compile(r"\s+(?:-|–|\||/)\s+")
+_HAS_COLOUR = re.compile(r"\b(?:" + "|".join(map(re.escape, _COLOUR_WORDS)) + r")\b", re.I)
+
+
 def family_key(it: dict) -> str:
     title = (it.get("title") or "").strip()
+    parts = _SEGMENT.split(title)
+    while len(parts) > 1 and _HAS_COLOUR.search(parts[-1]):
+        parts.pop()                         # "Coach jacket - pastel yellow check", "Tee | Cotton | Black"
+    title = " ".join(parts)
     for _ in range(2):
         title = _COLOUR_TAIL.sub("", title)
     host = urlparse(it.get("url") or "").netloc.lower()

@@ -113,7 +113,8 @@ def cmd_looks(a):
         if not lk["pieces"]:
             print(f"{head}: {lk['note']}")
         else:
-            print(f"{head} · {D.money(lk['total'])}: " + " + ".join(("yours: " if p.get("owned") else "") + p["title"] for p in lk["pieces"]))
+            print(f"{head} · {D.money(lk['total'])}: " + " + ".join(("yours: " if p.get("owned") else "") + p["title"] for p in lk["pieces"])
+                  + (f" ({lk['note']})" if lk.get("note") else ""))
 
 
 def cmd_digest(a):

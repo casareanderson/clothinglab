@@ -79,7 +79,7 @@ def render(top: list[dict], looks: list[dict], watch_alerts: list[dict] | None =
                 continue
             parts = [("yours: " if p.get("owned") else "") + p["title"] + ("" if p.get("owned") else f" ({money(p.get('price'))})")
                      for p in lk["pieces"]]
-            md.append(f"- {head} · {money(lk['total'])} new: " + " + ".join(parts))
+            md.append(f"- {head} · {money(lk['total'])} new: " + " + ".join(parts) + (f" _({lk['note']})_" if lk.get("note") else ""))
         md.append("")
     md.append("_Prices and stock change fast; check the shop before you buy._")
     return "\n".join(md)

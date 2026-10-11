@@ -80,3 +80,19 @@ def test_sale_only_accessories_and_season():
     lk = looks.build([{**x, "tier": "low"} for x in r] + [{"id": "s", "title": "Court Trainer", "category": "footwear",
                                                            "tier": "low", "price": 50}], {"department": "mens"})
     assert lk[0]["pieces"] == []                                     # the only bottom is shorts in November
+
+
+def test_family_key_drops_colour_segments():
+    a = item("3052 Coach jacket - navy", url="https://u.invalid/a")
+    b = item("3052 Coach jacket - pastel yellow check", url="https://u.invalid/b")
+    c = item("Arnold Oversized T Shirt | Organic Cotton | Black", url="https://u.invalid/c")
+    d = item("Arnold Oversized T Shirt | Organic Cotton | Navy", url="https://u.invalid/d")
+    assert family_key(a) == family_key(b) and family_key(c) == family_key(d)
+    assert family_key(item("Track Top - Grey", url="https://u.invalid/e")) != family_key(item("Track Pant - Grey", url="https://u.invalid/f"))
+
+
+def test_look_without_shoes_says_so():
+    ranked = [{"id": "t", "title": "Tee - Navy", "category": "top", "tier": "low", "price": 20, "colour": "navy"},
+              {"id": "b", "title": "Utility Pants - Black", "category": "bottom", "tier": "low", "price": 27, "colour": "black"}]
+    lk = looks.build(ranked, {"department": "mens", "budget": {"tiers": ["low"]}})[0]
+    assert [p["id"] for p in lk["pieces"]] == ["t", "b"] and lk["note"] == "no shoes in your size on sale today"
