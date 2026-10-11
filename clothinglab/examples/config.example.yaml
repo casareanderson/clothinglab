@@ -1,0 +1,54 @@
+# ClothingLab config: WHERE to look and HOW politely. Your sizes and taste live in profile.yaml.
+#
+# Identify yourself. Shops can see who is reading their catalogue; a real contact is the polite thing to do.
+# ClothingLab refuses to run until this no longer contains CHANGE-ME.
+user_agent: "ClothingLab/0.1 (personal deal digest; CHANGE-ME: your email or site)"
+
+politeness:
+  delay_seconds: 2          # gap between requests to the same shop
+  timeout_seconds: 20
+  allow_private_hosts: false  # only for testing against a shop running on your own machine
+
+# Example sources: a handful of UK Shopify shops whose public catalogue lists stock per size.
+# They're examples, not recommendations. Add the shops YOU buy from; remove any you don't.
+# robots.txt is always checked first, and a shop that says no is skipped.
+sources:
+  - name: percival
+    adapter: shopify
+    url: https://percivalclo.com
+    currency: GBP
+    max_pages: 2
+  - name: uskees
+    adapter: shopify
+    url: https://uskees.co.uk
+    currency: GBP
+    max_pages: 2
+  - name: finisterre
+    adapter: shopify
+    url: https://finisterre.com
+    currency: GBP
+    max_pages: 2
+  - name: allbirds-uk
+    adapter: shopify
+    url: https://www.allbirds.co.uk
+    currency: GBP
+    max_pages: 2
+  # A sale page only: add `collection: sale` (whatever the shop's sale collection handle is).
+  # Any shop with a sitemap + schema.org Product data on its pages:
+  # - name: some-shop
+  #   adapter: jsonld
+  #   sitemap: https://www.example-shop.co.uk/sitemap_products_1.xml
+  #   product_url_pattern: /products?/
+  #   max_pages: 40
+  # Your own adapter:  adapter: mypackage.mymodule:fetch
+
+# Budget tiers: £ lines per garment. Below `low` = 💸 Low, above `high` = 💎 High, between = 👌 Mid.
+# A person's profile.yaml (budget.caps) can override any of these.
+tiers:
+  caps:
+    tee:      {low: 25, high: 80}
+    hoodie:   {low: 35, high: 115}
+    trainers: {low: 65, high: 210}
+
+digest:
+  picks: 6

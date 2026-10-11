@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clothinglab"
+version = "0.1.0"
+description = "Sale items actually in stock in YOUR size, from shops you choose: digest, looks per budget tier, watchlist, MCP server"
+readme = "README.md"
+license = {text = "AGPL-3.0-or-later"}
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6", "mcp>=1.2,<2"]
+keywords = ["fashion", "deals", "shopify", "mcp", "ai-agent", "menswear", "price-tracker"]
+classifiers = ["License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+clothinglab = "clothinglab.cli:main"
+clothinglab-mcp = "clothinglab.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/casareanderson/clothinglab"
+
+[tool.setuptools]
+packages = ["clothinglab", "clothinglab.sources"]
+
+[tool.setuptools.package-data]
+clothinglab = ["examples/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,24 @@
+# A made-up person ("Sam") so you can see the shape. Run `clothinglab onboard` to write your own.
+# Never put height, weight or anything you wouldn't put on a shopping list in here.
+schema_version: 1
+name: Sam
+sizes:
+  tops: [M, L]            # best fit first
+  waist: [32]
+  trouser_length: regular # short | regular | long (optional)
+  bottoms_letter: [M]     # joggers/shorts sold as S/M/L
+  shoes_uk: [9, 9.5]      # EU and US are worked out
+fit:
+  likes: [relaxed, straight, boxy]
+  never: [skinny, cropped]
+colours:
+  palette: [navy, grey, olive, white]
+  avoid: [pink]
+brands:
+  love: [Percival, Uskees]
+  never: []
+budget:
+  tiers: [low, mid, high]
+  caps: {}                # e.g. {tee: {low: 20}}
+wardrobe:                 # optional: pieces you own that looks can use
+  - {name: white leather trainers, category: footwear, colour: white}
