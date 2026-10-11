@@ -22,10 +22,11 @@ def test_onboard_from_answers():
 
 
 def test_onboard_missing_and_forbidden():
-    prof, problems = onboard.build({"tops": "M"})
+    prof, problems = onboard.build({"department": "mens", "tops": "M"})
     assert any("waist" in p for p in problems) and any("shoes" in p for p in problems)
     assert onboard.validate({"sizes": {"tops": ["M"], "waist": [32], "shoes_uk": [9]}, "height": 180}) == \
         ["profile must not store height"]
+    assert any("department" in p for p in onboard.build({"tops": "M", "waist": "32", "shoes": "9"})[1])
 
 
 def test_full_flow(home):
@@ -88,10 +89,26 @@ def test_mcp_tools(home):
     server = mcp_server.build_server()
     handlers = {t.name: fn for t, fn in mcp_server.TOOLS}
     q = json.loads(handlers["clothinglab_questions"]({})[0].text)
-    assert q["sections"][0]["id"] == "sizes"
+    assert q["sections"][0]["id"] == "department"
+    w = json.loads(handlers["clothinglab_questions"]({"department": "womens"})[0].text)
+    assert "dress" in [x["id"] for sec in w["sections"] for x in sec["questions"]]
     app.refresh(log=lambda *a: None)
     res = json.loads(handlers["clothinglab_search"]({"category": "top", "tier": "low"})[0].text)
     assert res and all(r["tier"] == "low" for r in res)
     res = json.loads(handlers["clothinglab_save_profile"]({"answers": {"tops": "M"}})[0].text)
     assert res["saved"] is False and res["problems"]
     assert server.name == "clothinglab"
+
+
+def test_sources_local_merges(home):
+    (home / "sources.local.yaml").write_text(yaml.safe_dump([{"name": "fake", "url": "http://127.0.0.1:1"},
+                                                            {"name": "extra", "url": "http://127.0.0.1:2"}]))
+    srcs = {s["name"]: s["url"] for s in store.config()["sources"]}
+    assert srcs == {"fake": "http://127.0.0.1:1", "extra": "http://127.0.0.1:2"}   # local wins on the same name
+
+
+def test_dry_run_records_nothing(home, capsys):
+    app.refresh(log=lambda *a: None)
+    assert cli.main(["digest", "--dry-run", "--no-watch", "--mark-shown", "--discord"]) == 0
+    assert "Top picks" in capsys.readouterr().out
+    assert not (home / "data" / "shown.json").exists()

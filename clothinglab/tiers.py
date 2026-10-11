@@ -1,9 +1,9 @@
 """Budget tiers: 💸 low / 👌 mid / 💎 high, by ABSOLUTE price per garment type.
 
 A percentile would drift with whatever happens to be on sale; a £ line per garment is something a person can read,
-argue with and change. Below `low` is low, above `high` is high, in between is mid. Defaults come from a few weeks
-of UK menswear sale prices; override them in config.yaml (`tiers.caps`) or per person in profile.yaml
-(`budget.caps`).
+argue with and change. Below `low` is low, above `high` is high, in between is mid. The menswear rows come from a few
+weeks of UK sale prices; the boots, dress and skirt rows are starting points, not measurements yet. Override any of
+them in config.yaml (`tiers.caps`) or per person in profile.yaml (`budget.caps`).
 """
 from __future__ import annotations
 
@@ -21,6 +21,9 @@ DEFAULT_CAPS = {
     "denim": {"low": 30, "high": 85},
     "track": {"low": 25, "high": 70},
     "trainers": {"low": 65, "high": 210},
+    "boots": {"low": 60, "high": 180},
+    "dress": {"low": 35, "high": 120},
+    "skirt": {"low": 25, "high": 90},
     "other": {"low": 35, "high": 125},
 }
 

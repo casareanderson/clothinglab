@@ -1,11 +1,11 @@
-# your data never goes in the repo
-*.egg-info/
-*.local.*
-.pytest_cache/
-.venv/
 __pycache__/
-build/
-config.yaml
-data/
+*.egg-info/
+.venv/
 dist/
+build/
+.pytest_cache/
+# your data never goes in the repo
 profile.yaml
+config.yaml
+*.local.*
+data/

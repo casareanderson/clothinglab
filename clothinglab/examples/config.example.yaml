@@ -9,7 +9,8 @@ politeness:
   timeout_seconds: 20
   allow_private_hosts: false  # only for testing against a shop running on your own machine
 
-# Example sources: a handful of UK Shopify shops whose public catalogue lists stock per size.
+# Example sources: UK Shopify shops whose public catalogue lists stock per size. The first four are menswear or
+# unisex, the last three womenswear.
 # They're examples, not recommendations. Add the shops YOU buy from; remove any you don't.
 # robots.txt is always checked first, and a shop that says no is skipped.
 sources:
@@ -33,6 +34,25 @@ sources:
     url: https://www.allbirds.co.uk
     currency: GBP
     max_pages: 2
+  # womenswear (department: tells ClothingLab these shops are women's, since products rarely say so)
+  - name: damson-madder
+    adapter: shopify
+    url: https://damsonmadder.com
+    department: womens
+    currency: GBP
+    max_pages: 2
+  - name: never-fully-dressed
+    adapter: shopify
+    url: https://www.neverfullydressed.co.uk
+    department: womens
+    currency: GBP
+    max_pages: 2
+  - name: nobodys-child
+    adapter: shopify
+    url: https://www.nobodyschild.com
+    department: womens
+    currency: GBP
+    max_pages: 2
   # A sale page only: add `collection: sale` (whatever the shop's sale collection handle is).
   # Any shop with a sitemap + schema.org Product data on its pages:
   # - name: some-shop
@@ -41,6 +61,7 @@ sources:
   #   product_url_pattern: /products?/
   #   max_pages: 40
   # Your own adapter:  adapter: mypackage.mymodule:fetch
+  # More shops without editing this file: put them in sources.local.yaml next to it (same format, as a list).
 
 # Budget tiers: £ lines per garment. Below `low` = 💸 Low, above `high` = 💎 High, between = 👌 Mid.
 # A person's profile.yaml (budget.caps) can override any of these.

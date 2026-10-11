@@ -1,10 +1,10 @@
 # ClothingLab
 
-Sale clothes that are actually in stock in your size, from shops you choose, with one look per budget tier and nothing shown twice. It's a CLI, an MCP server for your AI assistant, and a daily digest.
+Sale clothes that are actually in stock in your size, menswear or womenswear, from shops you choose, with one look per budget tier and nothing shown twice. It's a CLI, an MCP server for your AI assistant, and a daily digest.
 
 ![A ClothingLab digest for a made-up person: top picks with the size that's in stock, budget tier and why it was picked, then one look per tier](docs/digest.png)
 
-*A real digest, generated from the fake shop in `tests/fake_shop.py` for a made-up person ("Sam", tops M/L, waist 32, UK 9/9.5).*
+*A real digest, generated from the fake shop in `tests/fake_shop.py` for a made-up menswear person ("Sam", tops M/L, waist 32, UK 9/9.5). A womenswear example is [further down](#womenswear).*
 
 ![AGPL-3.0 licence](https://img.shields.io/badge/licence-AGPL--3.0-blue) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![status: early](https://img.shields.io/badge/status-early-orange)
 
@@ -13,6 +13,7 @@ Sale clothes that are actually in stock in your size, from shops you choose, wit
 - [What it does](#what-it-does)
 - [Quick start](#quick-start)
 - [Usage](#usage)
+- [Womenswear](#womenswear)
 - [Use it from your AI assistant (MCP)](#use-it-from-your-ai-assistant-mcp)
 - [Configuration](#configuration)
 - [How it works](#how-it-works)
@@ -22,10 +23,11 @@ Sale clothes that are actually in stock in your size, from shops you choose, wit
 ## What it does
 
 - **Only shows what's in stock in your size.** It reads each variant's size and stock flag, so a hoodie with only M left never reaches someone who wears L. Items where the shop doesn't publish per-size stock are left out, not guessed.
-- **Understands real size labels**: `XX-Large` = `2XL` = `XXL`, `W32 L30`, `32R`, Shopify's glued `44 2/3 / Cream / Blue`, bare EU shoe sizes (worked out from your UK size), and it throws out youth sizes like `6Y` or `5.5 GS`.
+- **Understands real size labels**, men's and women's: `XX-Large` = `2XL` = `XXL`, `W32 L30`, `32R`, `UK 10`, `EU 38`, `S/10`, `8-10`, `10 Petite`, Shopify's glued `44 2/3 / Cream / Blue`, and bare EU shoe sizes (worked out from your UK size on the right chart). It throws out youth sizes like `6Y` or `5.5 GS`.
+- **Menswear, womenswear or both**, with petite, tall and maternity ranges left out unless you shop them.
 - **Budget tiers 💸 Low / 👌 Mid / 💎 High** by plain £ lines per garment (a tee under £25 is Low), which you can move.
 - **Never repeats itself.** Anything you've been shown stays out for 14 days, unless it got 5% cheaper again or came back into your size. Colourways count as the same product.
-- **Builds one look per tier** from a top, bottom and shoes in your size, using pieces you already own when it helps, and says so when a tier has no full look today.
+- **Builds one look per tier**, a dress and shoes or a top, bottom and shoes, plus a coat if one goes, using pieces you already own when it helps. It says so when a tier has no full look today.
 - **Watches products** for a price drop or a target price.
 - **Asks before it assumes.** A short onboarding interview writes your profile. It never asks for height or weight.
 
@@ -64,7 +66,18 @@ Success looks like `N products checked, M in stock in your size` from `refresh`,
 | `clothinglab digest --discord` / `--email you@example.com` | Send it (webhook / SMTP from environment variables) |
 | `clothinglab watch add URL --target 60` / `watch check` | Watch a product |
 
-A daily digest is one cron line: `25 8 * * * clothinglab refresh && clothinglab digest --mark-shown --email you@example.com`.
+`clothinglab digest --dry-run` prints the digest without recording or sending it. A daily digest is one cron line: `25 8 * * * clothinglab refresh && clothinglab digest --mark-shown --email you@example.com`.
+
+## Womenswear
+
+![A ClothingLab digest for a made-up womenswear person: a dress, blouse, coat, boots, skirt and jumper in Alex's sizes, and a dress-based look](docs/digest-womens.png)
+
+*Real output from the same fake shop for "Alex" (UK 10/12, S/M, W28 regular, UK 5/5.5). The petite jeans, the maternity dress, the bodycon dress (a cut Alex never wears) and every men's item were left out.*
+
+- Set `department: womens` (or `both`) in the profile; the interview asks this first and then only the questions that apply.
+- Sizes: UK dress sizes (EU and US labels are converted: UK 10 = EU 38 = US 6), letters, jeans by waist and leg, and UK shoe sizes on the women's chart (UK 5 = EU 38). A 30" leg counts as regular on women's jeans and short on men's.
+- Shops that only sell womenswear rarely say "women's" on each product, so give the source `department: womens` in config.
+- The budget lines for dresses, skirts and boots are starting points, not measured yet. Move them.
 
 ## Use it from your AI assistant (MCP)
 
@@ -98,17 +111,22 @@ Two files in `$CLOTHINGLAB_HOME` (default `~/.clothinglab`), both written owner-
 | `politeness.delay_seconds` | `2` | Gap between requests to the same shop |
 | `politeness.timeout_seconds` | `20` | Per request |
 | `politeness.allow_private_hosts` | `false` | Only for testing against a shop on your own machine |
-| `sources[]` | 4 example UK Shopify shops | `name`, `adapter` (`shopify`, `jsonld` or `module:function`), `url`, optional `collection`, `currency`, `shoe_scale`, `max_pages` |
+| `sources[]` | 7 example UK Shopify shops (4 men's/unisex, 3 women's) | `name`, `adapter` (`shopify`, `jsonld` or `module:function`), `url`, optional `collection`, `department`, `currency`, `shoe_scale`, `max_pages` |
 | `tiers.caps` | built-in table | £ lines per garment: `{tee: {low: 25, high: 80}}` |
 | `digest.picks` | `6` | Picks per digest |
+
+Extra shops can go in `sources.local.yaml` next to `config.yaml` (a list in the same format); a local source with the same name replaces the one in `config.yaml`.
 
 **`profile.yaml`**: who you are, written by `clothinglab onboard`. See [clothinglab/examples/profile.example.yaml](clothinglab/examples/profile.example.yaml).
 
 | Key | What it does |
 |---|---|
+| `department` | `mens`, `womens` or `both` (default `mens`) |
 | `sizes.tops` / `bottoms_letter` | Letter sizes, best fit first |
+| `sizes.dress_uk` | UK dress sizes (womenswear) |
+| `sizes.ranges` | Any of `petite`, `tall`, `maternity`; others are left out |
 | `sizes.waist` / `trouser_length` | Waist in inches; `short`, `regular` or `long` |
-| `sizes.shoes_uk` | UK shoe sizes; EU and US are worked out |
+| `sizes.shoes_uk` | UK shoe sizes; EU and US are worked out on the men's or women's chart |
 | `fit.likes` / `fit.never` | Fit words that score up / remove an item (`skinny`) |
 | `colours.palette` / `avoid` | Colours that score up / remove an item |
 | `brands.love` / `never` | Brands that score up / never appear |
@@ -151,13 +169,14 @@ Adding a shop that isn't Shopify and has no usable JSON-LD: write `fetch(fetcher
 
 ## Status, limits and real results
 
-Early, version 0.1.0. Measured on 11 Oct 2026 against the fake shop (13 adult products): 12 in stock in the test person's size, 10 left after their exclusions (one skinny cut, one colour they avoid), 6 picks, and a second digest that repeated none of them. The unit tests (51) and the setup check run on GitHub Actions.
+Early, version 0.1.0. Measured on 11 Oct 2026 against the fake shop (25 adult products, 13 men's and 12 women's): 12 in stock in Sam's sizes and 11 in Alex's, 10 each after their own exclusions, 6 picks each, and a second digest for Sam that repeated none of the first. The unit tests (106) and the setup check, which runs both people, run on GitHub Actions.
 
 Limits you should know about:
 
 - **Per-size stock is the whole game, and many big high-street shops don't publish it** in their page data; they load it later with JavaScript. ClothingLab leaves those items out rather than guessing, so the starter list is Shopify shops.
-- **Shoe conversions use one common men's chart.** Brands differ by half a size; the EU window allows half a size below.
-- **Menswear first.** Category detection drops womenswear and kids' items today. Pull requests that make it configurable are welcome.
+- **Shoe and dress conversions use one common UK chart each** for men's and women's. Brands differ by half a size; the EU window allows half a size below. Vanity sizing isn't fixed by any chart.
+- **Adults only for now.** Kids' items are dropped; the size code is structured so a kids' chart can be added.
+- **A person who shops "both"** uses one shoe chart (`sizes.chart`) for items that don't say which department they're from.
 - **No buying, no checkout, no accounts.** It reads public catalogue data and nothing else.
 - **Be a good guest.** Respect each shop's terms. The fetcher obeys robots.txt and waits between requests, but you choose the shops.
 - **Bring your own order importer.** There's no email or order-history import in this repo; see [docs/IMPORTERS.md](docs/IMPORTERS.md) for the interface.

@@ -16,32 +16,59 @@ from urllib.parse import parse_qs, urlparse
 LETTERS = ["S", "M", "L", "XL", "XXL"]
 
 
-def _p(pid, handle, title, vendor, ptype, price, was, sizes, sold_out=(), colour=None):
+def _p(pid, handle, title, vendor, ptype, price, was, sizes, sold_out=(), colour=None, lengths=None):
+    """lengths: e.g. ("Regular", "Petite") -> one variant per size x length, in a separate 'Length' option."""
     variants = []
-    for i, s in enumerate(sizes):
-        variants.append({"id": pid * 100 + i, "option1": s, "option2": colour, "price": f"{price:.2f}",
-                         "compare_at_price": f"{was:.2f}" if was else None, "available": s not in sold_out})
-    opts = [{"name": "Size", "values": list(sizes)}] + ([{"name": "Colour", "values": [colour]}] if colour else [])
+    combos = [(s, ln) for s in sizes for ln in (lengths or [None])]
+    for i, (s, ln) in enumerate(combos):
+        variants.append({"id": pid * 100 + i, "option1": s, "option2": ln or colour, "price": f"{price:.2f}",
+                         "compare_at_price": f"{was:.2f}" if was else None,
+                         "available": s not in sold_out and (s, ln) not in sold_out})
+    opts = [{"name": "Size", "values": list(sizes)}]
+    if lengths:
+        opts.append({"name": "Length", "values": list(lengths)})
+    elif colour:
+        opts.append({"name": "Colour", "values": [colour]})
     return {"id": pid, "handle": handle, "title": title, "vendor": vendor, "product_type": ptype, "tags": ["sale"] if was else [],
             "options": opts, "variants": variants, "images": [{"src": f"https://img.invalid/{handle}.jpg"}]}
 
 
 PRODUCTS = [
-    _p(1, "loopback-hoodie-navy", "Loopback Hoodie - Navy", "Northfold", "Hoodies", 48, 85, LETTERS, sold_out=("M",)),
-    _p(2, "loopback-hoodie-grey", "Loopback Hoodie - Grey", "Northfold", "Hoodies", 52, 85, LETTERS),
-    _p(3, "boxy-pocket-tee-olive", "Boxy Pocket Tee - Olive", "Harbour & Pine", "T-Shirts", 18, 32, LETTERS),
-    _p(4, "relaxed-oxford-shirt", "Relaxed Oxford Shirt - Blue", "Ashgrove", "Shirts", 59, 95, LETTERS),
-    _p(5, "straight-selvedge-jeans", "Straight Selvedge Jeans - Indigo", "Northfold", "Jeans", 89, 140,
+    _p(1, "loopback-hoodie-navy", "Loopback Hoodie - Navy", "Northfold", "Mens Hoodies", 48, 85, LETTERS, sold_out=("M",)),
+    _p(2, "loopback-hoodie-grey", "Loopback Hoodie - Grey", "Northfold", "Mens Hoodies", 52, 85, LETTERS),
+    _p(3, "boxy-pocket-tee-olive", "Boxy Pocket Tee - Olive", "Harbour & Pine", "Mens T-Shirts", 18, 32, LETTERS),
+    _p(4, "relaxed-oxford-shirt", "Relaxed Oxford Shirt - Blue", "Ashgrove", "Mens Shirts", 59, 95, LETTERS),
+    _p(5, "straight-selvedge-jeans", "Straight Selvedge Jeans - Indigo", "Northfold", "Mens Jeans", 89, 140,
        ["30R", "32R", "32L", "34R", "36R"]),
-    _p(6, "skinny-stretch-jeans", "Skinny Stretch Jeans - Black", "Ashgrove", "Jeans", 25, 60, ["30R", "32R", "34R"]),
-    _p(7, "pleated-wide-trousers", "Pleated Wide Trousers - Stone", "Harbour & Pine", "Trousers", 38, 70, ["W30 L32", "W32 L32", "W34 L32"]),
-    _p(8, "court-trainer-white", "Court Trainer - White", "Harbour & Pine", "Trainers", 74, 120, ["7", "8", "9", "9.5", "10", "11"]),
-    _p(9, "trail-runner-olive", "Trail Runner - Olive", "Ashgrove", "Shoes", 115, 180, ["42", "43", "44", "44.5", "45", "46"]),
-    _p(10, "harrington-jacket-navy", "Harrington Jacket - Navy", "Ashgrove", "Jackets", 120, 210, LETTERS),
+    _p(6, "skinny-stretch-jeans", "Skinny Stretch Jeans - Black", "Ashgrove", "Mens Jeans", 25, 60, ["30R", "32R", "34R"]),
+    _p(7, "pleated-wide-trousers", "Pleated Wide Trousers - Stone", "Harbour & Pine", "Mens Trousers", 38, 70, ["W30 L32", "W32 L32", "W34 L32"]),
+    _p(8, "court-trainer-white", "Court Trainer - White", "Harbour & Pine", "Mens Trainers", 74, 120, ["7", "8", "9", "9.5", "10", "11"]),
+    _p(9, "trail-runner-olive", "Trail Runner - Olive", "Ashgrove", "Mens Shoes", 115, 180, ["42", "43", "44", "44.5", "45", "46"]),
+    _p(10, "harrington-jacket-navy", "Harrington Jacket - Navy", "Ashgrove", "Mens Jackets", 120, 210, LETTERS),
     _p(11, "kids-logo-tee", "Kids Logo Tee", "Northfold", "Kids", 8, 14, ["7-8Y", "9-10Y"]),
-    _p(12, "track-pant-black", "Track Pant - Black", "Northfold", "Joggers", 30, 55, LETTERS),
-    _p(13, "heavy-tee-pink", "Heavyweight Tee - Pink", "Harbour & Pine", "T-Shirts", 15, 30, LETTERS),
-    _p(14, "chunky-knit-jumper", "Chunky Knit Jumper - Green", "Ashgrove", "Knitwear", 140, 220, LETTERS, sold_out=("M", "L")),
+    _p(12, "track-pant-black", "Track Pant - Black", "Northfold", "Mens Joggers", 30, 55, LETTERS),
+    _p(13, "heavy-tee-pink", "Heavyweight Tee - Pink", "Harbour & Pine", "Mens T-Shirts", 15, 30, LETTERS),
+    _p(14, "chunky-knit-jumper", "Chunky Knit Jumper - Green", "Ashgrove", "Mens Knitwear", 140, 220, LETTERS, sold_out=("M", "L")),
+    # womenswear (made-up brands): the labels real shops use
+    _p(21, "wrap-midi-dress-green", "Wrap Midi Dress - Green", "Wren & Vale", "Womens Dresses", 45, 89,
+       ["6", "8", "10", "12", "14", "16"], sold_out=("12",)),
+    _p(22, "pleated-midi-skirt-navy", "Pleated Midi Skirt - Navy", "Linden Row", "Womens Skirts", 28, 55,
+       ["UK 8", "UK 10", "UK 12", "UK 14"]),
+    _p(23, "relaxed-linen-blouse-white", "Relaxed Linen Blouse - White", "Wren & Vale", "Womens Tops", 32, 60,
+       ["XS/6", "S/8", "M/10", "M/12", "L/14"]),
+    _p(24, "wide-leg-jeans-indigo", "Wide Leg Jeans - Indigo", "Linden Row", "Womens Jeans", 49, 85,
+       ["W26 L30", "W28 L30", "W28 L32", "W30 L30"]),
+    _p(25, "straight-jeans-blue", "Straight Jeans - Blue", "Linden Row", "Womens Jeans", 39, 75,
+       ["8", "10", "12"], lengths=("Regular", "Petite"), sold_out=(("10", "Regular"),)),
+    _p(26, "chelsea-boots-black", "Chelsea Boots - Black", "Wren & Vale", "Womens Boots", 79, 140,
+       ["36", "37", "38", "39", "40"]),
+    _p(27, "ballet-flats-cream", "Ballet Flats - Cream", "Linden Row", "Womens Shoes", 35, 65, ["3", "4", "5", "6"]),
+    _p(28, "maternity-jersey-dress", "Maternity Jersey Dress - Black", "Wren & Vale", "Womens Dresses", 30, 50,
+       ["8", "10", "12"]),
+    _p(29, "wool-wrap-coat-camel", "Wool Wrap Coat - Camel", "Wren & Vale", "Womens Coats", 120, 240, ["8", "10", "12", "14"]),
+    _p(30, "cable-knit-jumper-cream", "Cable Knit Jumper - Cream", "Linden Row", "Womens Knitwear", 42, 80, ["XS", "S", "M", "L"]),
+    _p(31, "leather-tote-black", "Leather Tote Bag - Black", "Linden Row", "Womens Bags", 65, 110, ["One Size"]),
+    _p(32, "bodycon-dress-orange", "Bodycon Dress - Orange", "Wren & Vale", "Womens Dresses", 25, 50, ["8", "10", "12"]),
 ]
 
 

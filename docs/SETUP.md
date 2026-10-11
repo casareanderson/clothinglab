@@ -43,7 +43,9 @@ next: edit config.yaml (set user_agent, pick sources), then `clothinglab onboard
 2. **Pick your shops.** The four in the example are UK Shopify shops whose public catalogue lists stock per size.
    Keep the ones you'd buy from, add your own. For a Shopify shop you only need `name`, `adapter: shopify` and `url`.
    To read only a sale page, add `collection: <handle>` (the bit after `/collections/` in the shop's sale URL).
-3. **Leave `politeness` alone** unless you have a reason. `allow_private_hosts` is for testing only.
+3. **Womenswear-only shops**: add `department: womens` to the source; most don't say "women's" on each product.
+4. **Leave `politeness` alone** unless you have a reason. `allow_private_hosts` is for testing only.
+5. **More shops later** can go in `sources.local.yaml` beside `config.yaml` (a list in the same format).
 
 How to tell whether a shop will work: open `https://the-shop/products.json?limit=1` in a browser. If you see JSON
 with `variants` that have an `available` field, the Shopify adapter will work. **(not checked by CI: real shops)**
@@ -54,11 +56,12 @@ with `variants` that have an `available` field, the Shopify adapter will work. *
 clothinglab onboard
 ```
 
-It asks about sizes, fit, colours, brands, budget tiers and pieces you own, then writes `profile.yaml`. Required
-questions are marked `*`. It never asks for height or weight.
+It asks menswear, womenswear or both first, then only the size questions for that (UK dress sizes and petite/tall/
+maternity for womenswear), then fit, colours, brands, budget tiers and pieces you own, and writes `profile.yaml`.
+Required questions are marked `*`. It never asks for height or weight.
 
 Already have answers in a file (for example from your AI assistant)? `clothinglab onboard --answers answers.json`.
-The format is in `clothinglab/examples/answers.example.json`. If `profile.yaml` exists it writes
+The format is in `clothinglab/examples/answers.example.json` (menswear) and `answers-womens.example.json`. If `profile.yaml` exists it writes
 `profile.new.yaml` instead, unless you pass `--force` (which keeps a `.bak`).
 
 Check it:
@@ -73,14 +76,15 @@ clothinglab validate      # "profile OK"
 clothinglab refresh
 clothinglab picks
 clothinglab looks
+clothinglab digest --dry-run     # print it; nothing recorded or sent
 clothinglab digest
 ```
 
 `refresh` prints one line per shop and a total, e.g.:
 
 ```
-  fake-shop                    ok 13 products
-13 products checked, 12 in stock in your size
+  fake-shop                    ok 25 products
+25 products checked, 12 in stock in your size
 ```
 
 A shop that fails says why (`HTTP 403`, `robots.txt disallows …`) and the others carry on.
@@ -136,6 +140,8 @@ themselves are **(not checked by CI)**.
 | `refusing non-public or non-http URL` | a source points at your own network | only for testing: `allow_private_hosts: true` |
 | `0 in stock in your size` | the shop doesn't publish per-size stock, or nothing fits | check `products.json` has `available` per variant; check `profile.yaml` sizes |
 | a shoe never matches | the shop lists US sizes as bare numbers | add `shoe_scale: us` to that source |
+| men's items in a womenswear digest | the shop doesn't say which department | add `department: womens` to that source |
+| petite or tall items missing | they're left out unless you shop them | add them to `sizes.ranges` |
 
 ## Updating and removing
 

@@ -1,6 +1,6 @@
 ---
 name: clothinglab
-description: Find sale clothes that are actually in stock in the person's size, from shops they choose, with one look per budget tier (low/mid/high) and a watchlist. Use when someone asks for deals, outfits, "anything in my size", or to set up their sizes and style.
+description: Find sale clothes (menswear or womenswear) that are actually in stock in the person's size, from shops they choose, with one look per budget tier (low/mid/high) and a watchlist. Use when someone asks for deals, outfits, "anything in my size", or to set up their sizes and style.
 ---
 
 # ClothingLab
@@ -14,13 +14,14 @@ Tools come from the ClothingLab MCP server (`clothinglab mcp`), or the same oper
 
 ## First time: the onboarding interview
 
-1. Call `clothinglab_questions`. Ask the sections **in order, a few questions at a time**, in plain words.
+1. Ask first: menswear, womenswear, or both? Then call `clothinglab_questions` with that `department` and ask
+   the sections **in order, a few questions at a time**, in plain words.
 2. Write down answers in the person's own words. Don't convert or guess: "9 or 9.5" stays "9 or 9.5".
 3. Call `clothinglab_save_profile` with `{"answers": {question_id: answer}}`. If it returns problems, ask about
    exactly those, then save again.
 
 Rules for the interview:
-- **Never ask for height, weight or body measurements** beyond the sizes in the questions. If they offer them,
+- **Never ask for height, weight, bust, hips or other body measurements** beyond the sizes in the questions. If they offer them,
   thank them and don't record them.
 - Don't ask for photos of the person. Don't infer anything about their body.
 - Skipped questions stay empty. That's fine.

@@ -8,7 +8,7 @@
   clothinglab picks [-n 6]         today's picks, not yet shown
   clothinglab search [--category top] [--tier low] [--max-price 40] [--query "navy"]
   clothinglab looks                one look per budget tier
-  clothinglab digest [--mark-shown] [--out FILE] [--discord] [--email ADDRESS] [--format md|text|html]
+  clothinglab digest [--mark-shown] [--out FILE] [--discord] [--email ADDRESS] [--format md|text|html] [--dry-run]
   clothinglab watch add URL [--target 60] | list | remove URL | check
   clothinglab mcp                  run the MCP server on stdio
 """
@@ -49,13 +49,21 @@ def cmd_onboard(a):
     if a.answers:
         answers = json.loads(Path(a.answers).read_text())
     else:
-        answers = {}
+        answers, dept = {}, None
         for sec in onboard.questions():
+            qs = [q for q in sec["questions"] if dept is None or dept in q["for"]]
+            if not qs:
+                continue
             print(f"\n== {sec['title']} ==" + (f"\n{sec['intro']}" if sec["intro"] else ""))
-            for q in sec["questions"]:
-                v = input(q["ask"] + (" *" if q.get("required") else "") + "\n> ").strip()
+            for q in qs:
+                if dept is None and q["id"] != "department":
+                    continue
+                req = dept in (q.get("required") or ()) or q["id"] == "department"
+                v = input(q["ask"] + (" *" if req else "") + "\n> ").strip()
                 if v:
                     answers[q["id"]] = v
+                if q["id"] == "department":
+                    dept = onboard.coerce(q, v) or "mens"
     prof, problems = onboard.build(answers)
     for p in problems:
         print("problem:", p)
@@ -109,6 +117,8 @@ def cmd_looks(a):
 
 
 def cmd_digest(a):
+    if a.dry_run:                           # print only: nothing recorded, nothing sent
+        a.mark_shown, a.out, a.discord, a.email = False, None, False, None
     md = app.digest_markdown(mark_shown=a.mark_shown, check_watch=not a.no_watch)
     out = {"md": md, "text": D.to_text(md), "html": D.to_html(md)}[a.format]
     if a.out:
@@ -155,6 +165,7 @@ def main(argv=None) -> int:
     sub.add_parser("looks").set_defaults(fn=cmd_looks)
     p = sub.add_parser("digest")
     p.add_argument("--mark-shown", action="store_true", help="record what was shown so it won't repeat")
+    p.add_argument("--dry-run", action="store_true", help="print the digest only: don't record it or send it")
     p.add_argument("--no-watch", action="store_true"); p.add_argument("--out"); p.add_argument("--discord", action="store_true")
     p.add_argument("--email"); p.add_argument("--format", choices=["md", "text", "html"], default="md"); p.set_defaults(fn=cmd_digest)
     p = sub.add_parser("watch"); p.add_argument("action", choices=["add", "list", "remove", "check"])

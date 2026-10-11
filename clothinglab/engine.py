@@ -36,14 +36,28 @@ def gather(config: dict, fetcher: Fetcher | None = None, log=print) -> tuple[lis
     return items, health
 
 
+def person_department(profile: dict) -> str:
+    """mens | womens | both. Profiles from before departments existed are menswear."""
+    d = str(profile.get("department") or "mens").lower()
+    return d if d in ("mens", "womens", "both") else "mens"
+
+
 def in_size(items: list[dict], profile: dict) -> list[dict]:
     sz = profile.get("sizes") or {}
+    pdept = person_department(profile)
+    ranges = sz.get("ranges") or []
     out = []
     for it in items:
         avail = it.get("sizes_available")
         if avail is None:
             continue                        # size unknown: never shown as "in your size"
-        mine = sizes.my_sizes(it["category"], avail, sz, it.get("sizes_listed"), it.get("size_scale"))
+        if not catalog.wanted(it.get("department"), pdept):
+            continue
+        if it.get("range") and it["range"] not in ranges:
+            continue                        # a petite/tall/maternity product you didn't ask for
+        # which chart: the item's department if it says, else the person's ('both' people: their sizes field says)
+        dept = it.get("department") or (pdept if pdept != "both" else sz.get("chart", "mens"))
+        mine = sizes.my_sizes(it["category"], avail, sz, it.get("sizes_listed"), it.get("size_scale"), dept)
         if mine:
             out.append({**it, "my_sizes": mine})
     return out

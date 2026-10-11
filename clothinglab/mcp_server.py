@@ -23,9 +23,12 @@ def _text(obj) -> list[TextContent]:
 
 
 def t_questions(a):
-    return _text({"sections": onboard.questions(),
-                  "how": "Ask section by section, in your own words. Then call clothinglab_save_profile with "
-                         "{question_id: the person's answer}. Never ask for height or weight."})
+    dept = a.get("department")
+    return _text({"sections": onboard.questions(dept),
+                  "how": "Ask the department question first (menswear, womenswear or both), then call this tool again "
+                         "with that department to get only the questions that apply. Ask section by section, in your "
+                         "own words. Then call clothinglab_save_profile with {question_id: the person's answer}. "
+                         "Never ask for height, weight or body measurements."})
 
 
 def t_save_profile(a):
@@ -80,8 +83,11 @@ def t_watch_check(a):
 
 
 TOOLS = [
-    (Tool(name="clothinglab_questions", inputSchema=_EMPTY,
-          description="The onboarding interview (sizes, fit, colours, brands, budget tiers, wardrobe). Start here for a new person."),
+    (Tool(name="clothinglab_questions",
+          description="The onboarding interview (department, sizes, fit, colours, brands, budget tiers, wardrobe). Start here for a new person.",
+          inputSchema={"type": "object", "properties": {
+              "department": {"type": "string", "enum": ["mens", "womens", "both"],
+                             "description": "once known: only the questions for that department"}}}),
      t_questions),
     (Tool(name="clothinglab_save_profile", description="Turn interview answers into the person's profile.yaml.",
           inputSchema={"type": "object", "required": ["answers"], "properties": {

@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import re
 
-NOT_ADULT_MENS = re.compile(
-    r"\b(women'?s?|womens|ladies|girls?|boys?|kids?|junior|infants?|toddlers?|baby|child(?:ren)?|youth|"
-    r"\(gs\)|maternity|bra|bikini|dress|skirt)\b", re.I)
+KIDS = re.compile(
+    r"\b(kids?|boys?|girls?|junior|infants?|toddlers?|baby|child(?:ren)?|youth|\(gs\)|\d{1,2}\s*-\s*\d{1,2}\s*y(?:rs?|ears?)?)\b",
+    re.I)
+WOMENS = re.compile(r"\b(women'?s?|womens|ladies|female)\b", re.I)
+MENS = re.compile(r"\b(men'?s?|mens|male)\b", re.I)
 NON_FASHION = re.compile(
     r"\b(jewell?ery|necklace|earrings?|bracelet|perfume|fragrance|aftershave|candle|mug|book|poster|phone|"
     r"headphones?|toy|console|gift card|sticker)\b", re.I)
@@ -13,26 +15,34 @@ NON_FASHION = re.compile(
 # Order matters: the first pattern that matches the TITLE wins (a "denim jacket" is outerwear, not a bottom).
 CATS = [
     ("set", r"tracksuit|track ?suit|jogger set|matching set|two[- ]piece|co-?ord"),
-    ("footwear", r"trainers?|sneakers?|shoes?|boots?|loafers?|runners?|mules?|slides?|sandals?|derby|brogues?|footwear"),
+    ("dress", r"dress(?:es)?|jumpsuits?|playsuits?|pinafores?"),
+    ("skirt", r"skirts?|skorts?"),
+    ("footwear", r"trainers?|sneakers?|shoes?|boots?|loafers?|runners?|mules?|slides?|sandals?|derby|brogues?|footwear|"
+                 r"flats|heels|pumps|espadrilles?|clogs?"),
     ("outer", r"jackets?|coats?|parkas?|puffers?|gilets?|blazers?|harrington|bomber|anorak|windbreaker|overcoat|fleece"),
-    ("bottom", r"jeans?|trousers?|chinos?|joggers?|track ?pants?|sweat ?pants?|pants|shorts|cargos?|slacks"),
-    ("top", r"t-?shirts?|\btees?\b|shirts?|hoodies?|hooded|sweatshirts?|crew ?neck|jumpers?|sweaters?|knit(?:wear)?|"
-            r"cardigans?|polos?|overshirts?|quarter[- ]zip|zip[- ]up|long ?sleeve|henley|rugby"),
-    ("accessory", r"\bcaps?\b|\bhats?\b|beanies?|scarf|scarves|gloves|belts?|socks|bags?|backpacks?|totes?|wallets?"),
+    ("bottom", r"jeans?|trousers?|chinos?|joggers?|track ?pants?|sweat ?pants?|pants|shorts|cargos?|slacks|leggings|culottes"),
+    ("top", r"t-?shirts?|\btees?\b|shirts?|blouses?|camis?|tank(?: top)?s?|bodysuits?|tops?|hoodies?|hooded|sweatshirts?|"
+            r"crew ?neck|jumpers?|sweaters?|knit(?:wear)?|cardigans?|polos?|overshirts?|quarter[- ]zip|zip[- ]up|"
+            r"long ?sleeve|henley|rugby"),
+    ("accessory", r"\bcaps?\b|\bhats?\b|beanies?|scarf|scarves|gloves|belts?|socks|bags?|backpacks?|totes?|wallets?|"
+                  r"handbags?|clutch(?:es)?|purses?"),
 ]
 _CAT_RES = [(c, re.compile(r"\b(?:" + p + r")\b", re.I)) for c, p in CATS]
 
 # Garment type -> the budget cap row it uses (tiers.py). Checked in order against title + product type.
 GARMENTS = [
-    ("trainers", r"trainers?|sneakers?|runners?|shoes?|boots?"),
+    ("boots", r"boots?"),
+    ("trainers", r"trainers?|sneakers?|runners?|shoes?|flats|loafers?|heels|mules?|sandals?"),
+    ("dress", r"dress(?:es)?|jumpsuits?|playsuits?"),
+    ("skirt", r"skirts?"),
     ("denim", r"jeans?|denim"),
     ("track", r"track ?(?:pants?|top|jacket)|joggers?|sweat ?pants?"),
     ("jacket", r"jackets?|coats?|parkas?|puffers?|gilets?|blazers?|bomber|harrington|overcoat|anorak|fleece"),
     ("hoodie", r"hoodies?|hooded|sweatshirts?|crew ?neck"),
     ("knit", r"knit(?:wear)?|jumpers?|sweaters?|cardigans?"),
-    ("shirt", r"overshirts?|\bshirts?\b|polos?"),
+    ("shirt", r"overshirts?|\bshirts?\b|blouses?|polos?"),
     ("tee", r"t-?shirts?|\btees?\b|long ?sleeve|henley"),
-    ("trousers", r"trousers?|chinos?|pants|cargos?|slacks|shorts"),
+    ("trousers", r"trousers?|chinos?|pants|cargos?|slacks|shorts|leggings|culottes"),
 ]
 _GARMENT_RES = [(g, re.compile(r"\b(?:" + p + r")\b", re.I)) for g, p in GARMENTS]
 
@@ -56,8 +66,9 @@ NEUTRAL_FAMILIES = {"black", "white", "grey", "neutral"}
 
 
 def category(title: str, product_type: str = "", tags: str = "") -> str | None:
-    """'top' | 'outer' | 'bottom' | 'footwear' | 'set' | 'accessory' | None. Adult menswear only."""
-    if NOT_ADULT_MENS.search(f"{title} {product_type}") or NON_FASHION.search(title):
+    """'top' | 'outer' | 'bottom' | 'dress' | 'skirt' | 'footwear' | 'set' | 'accessory' | None.
+    Kids' items are dropped (adult sizing only, for now); men's vs women's is department(), not this."""
+    if KIDS.search(f"{title} {product_type}") or NON_FASHION.search(title):
         return None
     for c, rx in _CAT_RES:
         if rx.search(title):
@@ -66,6 +77,25 @@ def category(title: str, product_type: str = "", tags: str = "") -> str | None:
         if rx.search(f"{product_type} {tags}"):
             return c
     return None
+
+
+def department(title: str, product_type: str = "", tags: str = "", hint: str | None = None) -> str | None:
+    """'womens' | 'mens' | None (not stated: treated as unisex). A source can state it (`department:` in config)
+    for single-department shops, which rarely say "women's" on every product."""
+    if hint in ("womens", "mens"):
+        return hint
+    blob = f"{title} {product_type} {tags}"
+    w, m = bool(WOMENS.search(blob)), bool(MENS.search(blob))
+    if w and not m:
+        return "womens"
+    if m and not w:
+        return "mens"
+    return None
+
+
+def wanted(item_dept: str | None, person_dept: str) -> bool:
+    """mens profile: men's + unstated; womens: women's + unstated; both: everything."""
+    return person_dept == "both" or item_dept in (None, person_dept)
 
 
 def garment(title: str, product_type: str = "") -> str:

@@ -7,7 +7,7 @@ def test_category():
     assert catalog.category("Straight Selvedge Jeans") == "bottom"
     assert catalog.category("Court Trainer") == "footwear"
     assert catalog.category("Kids Logo Tee") is None
-    assert catalog.category("Womens Relaxed Tee") is None
+    assert catalog.category("Womens Relaxed Tee") == "top"          # department is separate from category
     assert catalog.category("Scented Candle") is None
     assert catalog.category("Item 42", "Hoodies") == "top"
 

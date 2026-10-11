@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import re
 
-from .. import catalog
+from .. import catalog, sizes
 from ..store import now_iso
 
 SIZE_OPT = re.compile(r"\b(size|taille|größe|grosse|maat|talla|waist|shoe)\b", re.I)
+RANGE_OPT = re.compile(r"\b(fit|length|range)\b", re.I)
 LOOKS_LIKE_SIZE = re.compile(r"^\s*(?:xxs|xs|s|m|l|xl|xxl|[2-4]xl|\d{1,2}(?:[.,]\d)?|w?\d{2}(?:\s*[x/l]\s*\d{2})?)\b", re.I)
 
 
@@ -44,9 +45,16 @@ def item_from_product(p: dict, base: str, src: dict) -> dict | None:
     if not variants:
         return None
     key = f"option{idx + 1}" if idx is not None else None
+    # Petite/Tall/Maternity often live in their own option ("Length: Petite"); fold them into the size label
+    # ("10 Petite") so size matching can apply the person's ranges.
+    rkey = next((f"option{i + 1}" for i, o in enumerate(p.get("options") or [])
+                 if i != idx and RANGE_OPT.search(str(o.get("name", "")))), None)
     listed, available = [], []
     for v in variants:
         lab = str(v.get(key) or "").strip() if key else ""
+        rng = sizes.label_range(str(v.get(rkey) or "")) if rkey else None
+        if lab and rng:
+            lab = f"{lab} {rng.title()}"
         if lab and lab not in listed:
             listed.append(lab)
         if lab and v.get("available") and lab not in available:
@@ -66,6 +74,8 @@ def item_from_product(p: dict, base: str, src: dict) -> dict | None:
         "url": f"{base}/products/{p.get('handle')}",
         "image": images[0].get("src") if images and isinstance(images[0], dict) else None,
         "category": cat,
+        "department": catalog.department(title, p.get("product_type", ""), " ".join(p.get("tags") or []) if isinstance(p.get("tags"), list) else str(p.get("tags") or ""), src.get("department")),
+        "range": sizes.label_range(title),
         "garment": catalog.garment(title, p.get("product_type", "")),
         "price": price,
         "was": was,

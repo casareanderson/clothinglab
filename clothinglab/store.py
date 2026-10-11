@@ -2,6 +2,7 @@
 
   profile.yaml   who you are: sizes, fit, colours, brands, budget (written by the onboarding interview)
   config.yaml    where to look: sources, politeness, tier caps, delivery
+  sources.local.yaml    optional: extra shops, merged into config.yaml's sources
   data/pool.json        the latest products seen, in your size or not
   data/shown.json       what you've already been shown (the no-repeat ledger)
   data/watch.json       your watchlist
@@ -64,7 +65,15 @@ def profile() -> dict:
 
 
 def config() -> dict:
-    return load_yaml(home() / "config.yaml")
+    """config.yaml, plus any shops in sources.local.yaml (a plain list, or {sources: [...]}) so you can add shops
+    without touching the main file. A local source with the same name replaces the one in config.yaml."""
+    cfg = load_yaml(home() / "config.yaml")
+    local = load_yaml(home() / "sources.local.yaml", default=[])
+    extra = local.get("sources", []) if isinstance(local, dict) else (local or [])
+    if extra:
+        names = {s.get("name") for s in extra}
+        cfg["sources"] = [s for s in cfg.get("sources") or [] if s.get("name") not in names] + list(extra)
+    return cfg
 
 
 def pool() -> list[dict]:

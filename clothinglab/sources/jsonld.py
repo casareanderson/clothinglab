@@ -11,7 +11,7 @@ import json
 import re
 from html import unescape
 
-from .. import catalog
+from .. import catalog, sizes
 from ..store import now_iso
 
 LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.I)
@@ -89,6 +89,8 @@ def parse_page(html: str, url: str, src: dict) -> dict | None:
         "id": f"{src['name']}:{url.rstrip('/').rsplit('/', 1)[-1]}",
         "source": src["name"], "title": title, "brand": brand or src["name"], "url": url,
         "image": image if isinstance(image, str) else None, "category": cat,
+        "department": catalog.department(title, str(group.get("category", "")), "", src.get("department")),
+        "range": sizes.label_range(title),
         "garment": catalog.garment(title, str(group.get("category", ""))),
         "price": price, "was": None, "currency": src.get("currency", "GBP"), "discount": 0.0,
         "sizes_listed": listed if per_size else None,

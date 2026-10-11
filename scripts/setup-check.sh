@@ -31,6 +31,7 @@ sources:
   - {name: fake-shop, adapter: shopify, url: "http://127.0.0.1:8765"}
 YAML
 
+OLDHOME="$CLOTHINGLAB_HOME"
 step "5. onboarding from answers (the interview's output)"
 clothinglab onboard --answers clothinglab/examples/answers.example.json --force
 clothinglab validate
@@ -77,5 +78,23 @@ async def main():
             print(len(names), "tools; footwear in your size:", [r["title"] for r in rows])
 asyncio.run(main())
 PY
+
+step "10. a womenswear person (Alex) in a second home"
+export CLOTHINGLAB_HOME="$(mktemp -d)"
+cp "$OLDHOME/config.yaml" "$CLOTHINGLAB_HOME/config.yaml"
+clothinglab onboard --answers clothinglab/examples/answers-womens.example.json
+clothinglab validate
+clothinglab refresh | tee "$CLOTHINGLAB_HOME/refresh.txt"
+clothinglab digest --dry-run | tee "$CLOTHINGLAB_HOME/digest.md"
+python3 - "$CLOTHINGLAB_HOME/digest.md" <<'PY'
+import sys
+d = open(sys.argv[1]).read()
+for want in ("ClothingLab for Alex", "Wrap Midi Dress", "your size: 10"):
+    assert want in d, want
+for never in ("Loopback Hoodie", "Maternity", "Bodycon"):
+    assert never not in d, never
+print("womenswear digest OK")
+PY
+test ! -f "$CLOTHINGLAB_HOME/data/shown.json" || { echo "--dry-run recorded what it showed" >&2; exit 1; }
 
 printf '\nsetup-check: every step in docs/SETUP.md worked\n'

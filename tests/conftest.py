@@ -34,3 +34,13 @@ def home(tmp_path, monkeypatch, shop):
     (tmp_path / "config.yaml").write_text(yaml.safe_dump(cfg))
     (tmp_path / "profile.yaml").write_text(yaml.safe_dump(SAM))
     return tmp_path
+
+
+ALEX = {
+    "schema_version": 2, "name": "Alex", "department": "womens",
+    "sizes": {"tops": ["S", "M"], "dress_uk": [10, 12], "waist": [28], "trouser_length": "regular", "shoes_uk": [5, 5.5]},
+    "fit": {"likes": ["wide", "relaxed", "midi", "wrap"], "never": ["bodycon"]},
+    "colours": {"palette": ["green", "navy", "cream"], "avoid": ["orange"]},
+    "brands": {"love": ["Wren & Vale"], "never": []},
+    "budget": {"tiers": ["low", "mid", "high"]},
+}
