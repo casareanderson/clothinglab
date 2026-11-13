@@ -114,7 +114,8 @@ def rank(items: list[dict], profile: dict, cap_table: dict | None = None, sale_o
         fits = catalog.words(it.get("title", ""), fit_likes)
         if fits:
             score += 6 * len(fits)
-            why.append(f"{fits[0]} fit")
+            w = fits[0]
+            why.append(w if w.lower().endswith("fit") else f"{w} fit")   # "relaxed fit", not "relaxed fit fit"
         cols = catalog.words(it.get("colour", ""), palette)
         if cols:
             score += 10

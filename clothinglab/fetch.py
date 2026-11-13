@@ -2,6 +2,9 @@
 
 Shops are run by people. ClothingLab reads the public product data a shop already publishes (Shopify's
 products.json, JSON-LD on product pages), slowly, and stops when told no.
+
+It uses `requests`, not `urllib`: Shopify's edge answers urllib's request fingerprint with 429 for
+every shop, while requests with the same User-Agent is answered 200. Don't swap this back.
 """
 from __future__ import annotations
 
@@ -9,10 +12,10 @@ import ipaddress
 import json
 import socket
 import time
-import urllib.error
-import urllib.request
 import urllib.robotparser
 from urllib.parse import urlparse
+
+import requests
 
 
 PLACEHOLDER_UA = "CHANGE-ME"
@@ -47,7 +50,7 @@ class Fetcher:
         self.ua, self.delay, self.timeout, self.allow_private = user_agent, float(delay), float(timeout), allow_private
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
         self._last: dict[str, float] = {}
-        self.requests = 0
+        self.request_count = 0
 
     def _robots_for(self, url: str):
         u = urlparse(url)
@@ -79,15 +82,20 @@ class Fetcher:
             raise FetchError(f"refusing non-public or non-http URL: {url}")
         host = urlparse(url).netloc
         self._wait(host)
-        req = urllib.request.Request(url, headers={"User-Agent": self.ua, "Accept": "application/json, text/html;q=0.9"})
-        self.requests += 1
+        self.request_count += 1
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                return r.read(15 * 1024 * 1024)
-        except urllib.error.HTTPError as e:
-            raise FetchError(f"HTTP {e.code} for {url}") from None
-        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            r = requests.get(url, timeout=self.timeout, headers={
+                "User-Agent": self.ua, "Accept": "application/json, text/html;q=0.9"})
+        except requests.RequestException as e:
             raise FetchError(f"{type(e).__name__} for {url}: {e}") from None
+        if r.status_code != 200:
+            raise FetchError(f"HTTP {r.status_code} for {url}")
+        buf = bytearray()
+        for chunk in r.iter_content(chunk_size=65536):
+            buf += chunk
+            if len(buf) >= 15 * 1024 * 1024:
+                break
+        return bytes(buf)
 
     def get(self, url: str) -> bytes:
         if not self.allowed(url):
