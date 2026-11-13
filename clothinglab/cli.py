@@ -10,6 +10,7 @@
   clothinglab looks                one look per budget tier
   clothinglab digest [--mark-shown] [--out FILE] [--discord] [--email ADDRESS] [--format md|text|html] [--dry-run]
   clothinglab watch add URL [--target 60] | list | remove URL | check
+  clothinglab schedule [--day 1] [--time 8:25] [--deliver discord|email] [--email ADDRESS] [--remove]
   clothinglab mcp                  run the MCP server on stdio
 """
 from __future__ import annotations
@@ -23,7 +24,7 @@ from pathlib import Path
 
 import yaml
 
-from . import app, deliver, digest as D, engine, onboard, store, tiers, watch
+from . import app, deliver, digest as D, engine, onboard, schedule, store, tiers, watch
 from .fetch import FetchError
 
 
@@ -147,6 +148,18 @@ def cmd_watch(a):
             print(f"{D.money(r.get('price'))} target {D.money(r.get('target')) if r.get('target') else '-'}  {r.get('title') or ''}  {r['url']}")
 
 
+def cmd_schedule(a):
+    if a.remove:
+        print("removed" if schedule.remove() else "no schedule to remove")
+        return 0
+    line = schedule.cron(a.day, a.time, a.deliver, a.email)
+    schedule.install(line)
+    print(f"installed weekly digest: {line}")
+    if not shutil.which("clothinglab"):
+        print("note: `clothinglab` isn't on PATH here — install it somewhere cron can find it")
+    return 0
+
+
 def cmd_mcp(a):
     from .mcp_server import main
     return main()
@@ -171,6 +184,13 @@ def main(argv=None) -> int:
     p.add_argument("--email"); p.add_argument("--format", choices=["md", "text", "html"], default="md"); p.set_defaults(fn=cmd_digest)
     p = sub.add_parser("watch"); p.add_argument("action", choices=["add", "list", "remove", "check"])
     p.add_argument("url", nargs="?"); p.add_argument("--target", type=float); p.set_defaults(fn=cmd_watch)
+    p = sub.add_parser("schedule", help="install a weekly digest cron")
+    p.add_argument("--day", type=int, default=1, help="weekday 0-6 (0=Sun, 1=Mon)")
+    p.add_argument("--time", default="8:25", help="HH:MM")
+    p.add_argument("--deliver", choices=["discord", "email"], default="discord")
+    p.add_argument("--email", help="required with --deliver email")
+    p.add_argument("--remove", action="store_true", help="remove the weekly digest cron")
+    p.set_defaults(fn=cmd_schedule)
     sub.add_parser("mcp").set_defaults(fn=cmd_mcp)
     a = ap.parse_args(argv)
     if a.cmd == "watch" and a.action in ("add", "remove") and not a.url:
