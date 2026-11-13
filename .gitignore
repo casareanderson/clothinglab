@@ -9,3 +9,7 @@ profile.yaml
 config.yaml
 *.local.*
 data/
+
+# estate-local files (this clone only)
+run-weekly.sh
+MERGE.md
