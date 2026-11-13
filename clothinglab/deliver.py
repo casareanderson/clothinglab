@@ -1,5 +1,5 @@
-"""Where the digest goes. Default: stdout / a file. Optional: a Discord webhook, or email over SMTP.
-Secrets come from the environment, never from config files you might commit."""
+"""Where the digest goes. Default: stdout / a file. Optional: a Discord webhook, email over SMTP,
+Telegram (bot API) or WhatsApp (Meta Cloud API). Secrets come from the environment, never from config files."""
 from __future__ import annotations
 
 import json
@@ -48,3 +48,36 @@ def email(md: str, to: str, subject: str = "ClothingLab: in your size today") ->
         if e.get("CLOTHINGLAB_SMTP_USER"):
             s.login(e["CLOTHINGLAB_SMTP_USER"], e["CLOTHINGLAB_SMTP_PASSWORD"])
         s.send_message(msg)
+
+
+def telegram(md: str, chat_id: str | None = None, token: str | None = None) -> int:
+    """Send via the Telegram Bot API in <=4000-char chunks. CLOTHINGLAB_TELEGRAM_BOT_TOKEN / _CHAT_ID."""
+    token = token or os.environ.get("CLOTHINGLAB_TELEGRAM_BOT_TOKEN")
+    chat_id = chat_id or os.environ.get("CLOTHINGLAB_TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        raise RuntimeError("set CLOTHINGLAB_TELEGRAM_BOT_TOKEN and CLOTHINGLAB_TELEGRAM_CHAT_ID")
+    text = to_text(md)
+    chunks = [text[i : i + 4000] for i in range(0, len(text), 4000)] or [""]
+    for c in chunks:
+        body = json.dumps({"chat_id": chat_id, "text": c}).encode()
+        urllib.request.urlopen(urllib.request.Request(
+            f"https://api.telegram.org/bot{token}/sendMessage", data=body,
+            headers={"Content-Type": "application/json"}), timeout=30)
+    return len(chunks)
+
+
+def whatsapp(md: str, to: str | None = None) -> int:
+    """Send via the Meta WhatsApp Cloud API in <=4000-char chunks. CLOTHINGLAB_WA_TOKEN / _WA_PHONE_ID / _WA_TO."""
+    token = os.environ.get("CLOTHINGLAB_WA_TOKEN")
+    phone_id = os.environ.get("CLOTHINGLAB_WA_PHONE_ID")
+    to = to or os.environ.get("CLOTHINGLAB_WA_TO")
+    if not (token and phone_id and to):
+        raise RuntimeError("set CLOTHINGLAB_WA_TOKEN, CLOTHINGLAB_WA_PHONE_ID and CLOTHINGLAB_WA_TO")
+    text = to_text(md)
+    chunks = [text[i : i + 4000] for i in range(0, len(text), 4000)] or [""]
+    for c in chunks:
+        body = json.dumps({"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": c}}).encode()
+        urllib.request.urlopen(urllib.request.Request(
+            f"https://graph.facebook.com/v21.0/{phone_id}/messages", data=body,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}), timeout=30)
+    return len(chunks)

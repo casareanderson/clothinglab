@@ -64,10 +64,11 @@ Success looks like `N products checked, M in stock in your size` from `refresh`,
 | `clothinglab search --category footwear --tier low --max-price 60 --query navy` | Ask the pool a question |
 | `clothinglab looks` | One look per budget tier |
 | `clothinglab digest --mark-shown --out today.md` | The digest; `--mark-shown` records it so tomorrow doesn't repeat |
-| `clothinglab digest --discord` / `--email you@example.com` | Send it (webhook / SMTP from environment variables) |
+| `clothinglab digest --discord` / `--telegram` / `--whatsapp` / `--email you@example.com` | Send it (webhook / Telegram bot / WhatsApp / SMTP from environment variables) |
+| `clothinglab schedule` / `schedule --remove` | Install or remove a weekly digest cron (`--day`/`--time`/`--deliver`) |
 | `clothinglab watch add URL --target 60` / `watch check` | Watch a product |
 
-`clothinglab digest --dry-run` prints the digest without recording or sending it. A daily digest is one cron line: `25 8 * * * clothinglab refresh && clothinglab digest --mark-shown --email you@example.com`.
+`clothinglab digest --dry-run` prints the digest without recording or sending it. A weekly digest is `clothinglab schedule` (defaults to Monday 08:25, Discord); it installs the equivalent cron line for you: `25 8 * * 1 clothinglab refresh && clothinglab digest --mark-shown --discord`.
 
 ## Womenswear
 
@@ -136,7 +137,7 @@ Extra shops can go in `sources.local.yaml` next to `config.yaml` (a list in the 
 | `wardrobe` | Pieces you own that looks can use |
 | `accessories` | `true` lets bags, hats and belts be picks (default off) |
 
-**Environment**: `CLOTHINGLAB_HOME`, `CLOTHINGLAB_DISCORD_WEBHOOK`, `CLOTHINGLAB_SMTP_HOST`, `_PORT`, `_USER`, `_PASSWORD`, `_FROM`.
+**Environment**: `CLOTHINGLAB_HOME`, `CLOTHINGLAB_DISCORD_WEBHOOK`, `CLOTHINGLAB_SMTP_HOST`, `_PORT`, `_USER`, `_PASSWORD`, `_FROM`, `CLOTHINGLAB_TELEGRAM_BOT_TOKEN`, `CLOTHINGLAB_TELEGRAM_CHAT_ID`, `CLOTHINGLAB_WA_TOKEN`, `CLOTHINGLAB_WA_PHONE_ID`, `CLOTHINGLAB_WA_TO`.
 
 ## How it works
 

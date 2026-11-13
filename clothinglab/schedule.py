@@ -1,7 +1,7 @@
 """Weekly digest scheduling. Installs/removes a single crontab line, marked so it's idempotent.
 
-The cron runs `refresh` then `digest --mark-shown` and delivers via Discord or email, so the
-line carries whatever the configured CLOTHINGLAB_DISCORD_WEBHOOK / CLOTHINGLAB_SMTP_* env point at.
+The cron runs `refresh` then `digest --mark-shown` and delivers via Discord, email, Telegram or
+WhatsApp, so the line carries whatever the matching CLOTHINGLAB_* env points at.
 """
 from __future__ import annotations
 
@@ -62,5 +62,5 @@ def cron(day: int, time: str, deliver: str, email: str | None) -> str:
             raise ValueError("--deliver email needs --email ADDRESS")
         send = f"--email {email}"
     else:
-        send = "--discord"
+        send = f"--{deliver}"     # discord | telegram | whatsapp
     return f"{minute} {hour} * * {day} {binpath} refresh && {binpath} digest --mark-shown {send}"

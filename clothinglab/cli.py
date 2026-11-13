@@ -8,7 +8,7 @@
   clothinglab picks [-n 6]         today's picks, not yet shown
   clothinglab search [--category top] [--tier low] [--max-price 40] [--query "navy"]
   clothinglab looks                one look per budget tier
-  clothinglab digest [--mark-shown] [--out FILE] [--discord] [--email ADDRESS] [--format md|text|html] [--dry-run]
+  clothinglab digest [--mark-shown] [--out FILE] [--discord] [--telegram] [--whatsapp] [--email ADDRESS] [--format md|text|html] [--dry-run]
   clothinglab watch add URL [--target 60] | list | remove URL | check
   clothinglab schedule [--day 1] [--time 8:25] [--deliver discord|email] [--email ADDRESS] [--remove]
   clothinglab mcp                  run the MCP server on stdio
@@ -120,7 +120,7 @@ def cmd_looks(a):
 
 def cmd_digest(a):
     if a.dry_run:                           # print only: nothing recorded, nothing sent
-        a.mark_shown, a.out, a.discord, a.email = False, None, False, None
+        a.mark_shown, a.out, a.discord, a.email, a.telegram, a.whatsapp = False, None, False, None, False, False
     md = app.digest_markdown(mark_shown=a.mark_shown, check_watch=not a.no_watch)
     out = {"md": md, "text": D.to_text(md), "html": D.to_html(md)}[a.format]
     if a.out:
@@ -131,7 +131,11 @@ def cmd_digest(a):
     if a.email:
         deliver.email(md, a.email)
         print("emailed", a.email)
-    if not (a.out or a.discord or a.email):
+    if a.telegram:
+        print("telegram chunks:", deliver.telegram(md))
+    if a.whatsapp:
+        print("whatsapp chunks:", deliver.whatsapp(md))
+    if not (a.out or a.discord or a.email or a.telegram or a.whatsapp):
         print(out)
 
 
@@ -181,13 +185,14 @@ def main(argv=None) -> int:
     p.add_argument("--mark-shown", action="store_true", help="record what was shown so it won't repeat")
     p.add_argument("--dry-run", action="store_true", help="print the digest only: don't record it or send it")
     p.add_argument("--no-watch", action="store_true"); p.add_argument("--out"); p.add_argument("--discord", action="store_true")
+    p.add_argument("--telegram", action="store_true"); p.add_argument("--whatsapp", action="store_true")
     p.add_argument("--email"); p.add_argument("--format", choices=["md", "text", "html"], default="md"); p.set_defaults(fn=cmd_digest)
     p = sub.add_parser("watch"); p.add_argument("action", choices=["add", "list", "remove", "check"])
     p.add_argument("url", nargs="?"); p.add_argument("--target", type=float); p.set_defaults(fn=cmd_watch)
     p = sub.add_parser("schedule", help="install a weekly digest cron")
     p.add_argument("--day", type=int, default=1, help="weekday 0-6 (0=Sun, 1=Mon)")
     p.add_argument("--time", default="8:25", help="HH:MM")
-    p.add_argument("--deliver", choices=["discord", "email"], default="discord")
+    p.add_argument("--deliver", choices=["discord", "email", "telegram", "whatsapp"], default="discord")
     p.add_argument("--email", help="required with --deliver email")
     p.add_argument("--remove", action="store_true", help="remove the weekly digest cron")
     p.set_defaults(fn=cmd_schedule)

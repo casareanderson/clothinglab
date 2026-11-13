@@ -20,6 +20,12 @@ def test_cron_email_line(monkeypatch):
     assert line == "0 9 * * 3 clothinglab refresh && clothinglab digest --mark-shown --email you@example.com"
 
 
+def test_cron_telegram_and_whatsapp(monkeypatch):
+    monkeypatch.setattr(schedule.shutil, "which", lambda n: "clothinglab")
+    assert schedule.cron(1, "8:25", "telegram", None) == "25 8 * * 1 clothinglab refresh && clothinglab digest --mark-shown --telegram"
+    assert schedule.cron(1, "8:25", "whatsapp", None) == "25 8 * * 1 clothinglab refresh && clothinglab digest --mark-shown --whatsapp"
+
+
 def test_cron_rejects_bad_values():
     for day, time in ((7, "8:25"), (1, "25:00"), (1, "8:60"), (1, "not-a-time")):
         with pytest.raises(ValueError):
